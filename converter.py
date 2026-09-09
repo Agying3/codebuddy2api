@@ -83,8 +83,15 @@ def auth_dirs() -> list[Path]:
 def find_auth_file() -> Path | None:
     for d in auth_dirs():
         if d.is_dir():
-            for f in sorted(d.glob("*.info")):
-                return f
+            files = list(d.glob("*.info"))
+            if not files:
+                continue
+            # CodeBuddy keeps timestamped history files beside the current session.
+            # Prefer the current file, then fall back to the newest available file.
+            current = d / "workbuddy-desktop.info"
+            if current.is_file():
+                return current
+            return max(files, key=lambda f: f.stat().st_mtime)
     return None
 
 
